@@ -84,3 +84,23 @@ GMAIL_USER="google user id from google api"
 
 4. Run development server
 npm run dev
+
+# Project Screenshots
+
+#Admin Dashboards
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+https://github.com/Jouhar123/Visitor-management-system/blob/master/public/Admin%20Dashboard.png
+
+#Visitor Registration
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+https://github.com/Jouhar123/Visitor-management-system/blob/master/public/Visitor%20Registration.png
+
+#Sponsor List
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+https://github.com/Jouhar123/Visitor-management-system/blob/master/public/Sponsors%20List.png
+
+# Visitor List
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+https://github.com/Jouhar123/Visitor-management-system/blob/master/public/Visitors%20List.png
+
+
