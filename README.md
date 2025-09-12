@@ -93,14 +93,14 @@ npm run dev
 
 #Visitor Registration
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-https://github.com/Jouhar123/Visitor-management-system/blob/master/public/Visitor%20Registration.png
+![Visitor list](./public/VisitorRegistration.png)
 
 #Sponsor List
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-https://github.com/Jouhar123/Visitor-management-system/blob/master/public/Sponsors%20List.png
+![Sponsor List](./public/SponsorsList.png)
 
 # Visitor List
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-https://github.com/Jouhar123/Visitor-management-system/blob/master/public/Visitors%20List.png
+![Visitor List](./public/VisitorsList.png)
 
 
