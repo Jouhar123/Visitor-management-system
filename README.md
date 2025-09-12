@@ -55,6 +55,8 @@ Auth: JWT + bcrypt password hashing
 🚀 Getting Started
 1.Clone repository
 
+git clone git@github.com:Jouhar123/Visitor-management-system.git
+
 2. install dependency
 npm install
 # or
@@ -62,21 +64,21 @@ yarn install
 
 3. Environment variables
 
-# database uri
+# Database uri
 MONGO_URI="enter dataabse url"
-# url port
+# Url Port
 NEXT_BASE_URL="enter port"
 
-# clodanary cloud storage credential
+# Clodanary cloud storage credential
 CLOUDINARY_CLOUD_NAME="cloudanary cloud name"
 CLOUDINARY_API_KEY="cloudanary api key"
 CLOUDINARY_API_SECRET="cloudanary secret"
 
-# seceret credential
+# Seceret credential
 JWT_SECRET = "your-secret"
 JWT_EXPIRE = "token expires in "
 
-# email credential
+# Email credential
 GMAIL_APP_PASSWORD="goole gmail passwrd from google api "
 GMAIL_USER="google user id from google api"
 
