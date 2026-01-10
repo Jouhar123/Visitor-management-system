@@ -207,6 +207,10 @@ export default function Page() {
             <a href="#" className="text-sm text-blue-600 hover:underline">
               Forgot password?
             </a>
+            <a href="/visitor" className="text-sm text-blue-600 hover:underline">
+              Visitor Regestration
+            </a>
+            
           </div>
         </form>
       </div>
