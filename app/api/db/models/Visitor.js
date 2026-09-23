@@ -11,5 +11,9 @@ const visitorSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Visitor ||
-  mongoose.model("Visitor", visitorSchema);
+// Indexes
+visitorSchema.index({ phone: 1 }, { unique: true });
+visitorSchema.index({ email: 1 }, { unique: true, sparse: true });
+
+export default mongoose.models.Visitor || mongoose.model("Visitor", visitorSchema);
+

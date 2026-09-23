@@ -17,14 +17,17 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["admin", "sponsor"], // allowed roles
-    default: "sponsor", // optional default role
+    enum: ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST", "SPONSOR", "SECURITY"],
+    default: "SPONSOR",
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
+
+// Index on role for RBAC queries
+UserSchema.index({ role: 1 });
 
 // Hash password before saving
 UserSchema.pre("save", async function (next) {
@@ -44,5 +47,4 @@ UserSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-export const User =
-  mongoose.models.User || mongoose.model("User", UserSchema);
+export const User = mongoose.models.User || mongoose.model("User", UserSchema);

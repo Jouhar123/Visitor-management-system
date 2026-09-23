@@ -2,34 +2,23 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { User } from "../../db/models/Users";
 import dbConnect from "../../db/dbconnect";
+import { jsonSuccess, jsonError } from "../../../lib/api/response";
+import { AuthError, ValidationError } from "../../../lib/api/errors";
 
 export async function GET(req) {
   try {
     await dbConnect();
-
     const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    const token = authHeader.split(" ")[1];
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
+    if (!authHeader) throw new AuthError('Missing Authorization header');
+    const token = authHeader.split(' ')[1];
+    if (!token) throw new AuthError('Missing token');
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
     const user = await User.findById(decoded._id).select("-password");
-    if (!user) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(
-      { message: "Valid session", user },
-      { status: 200 }
-    );
+    if (!user) throw new AuthError('User not found');
+    return new Response(JSON.stringify(jsonSuccess(user, 'Valid session')), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (err) {
-    console.error("Token validation error:", err);
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const status = err instanceof AuthError ? err.status : 500;
+    const message = err.message || 'Internal Server Error';
+    return new Response(JSON.stringify(jsonError(message, err.code || 'AUTH_ERROR', status)), { status, headers: { 'Content-Type': 'application/json' } });
   }
 }

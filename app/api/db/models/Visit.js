@@ -9,20 +9,26 @@ const visitSchema = new mongoose.Schema({
   time: String,
   approval: {
     type: Boolean,
-    default: false
+    default: false,
   },
   rejected: {
     type: Boolean,
-    default: false
+    default: false,
   },
   approvalToken: {
     type: String,
     unique: true,
-    sparse: true
+    sparse: true,
   },
   locationLat: Number,
   locationLong: Number,
   expiresAt: Date,
 }, { timestamps: true });
+
+// Indexes for fast lookups
+visitSchema.index({ visitor: 1 });
+visitSchema.index({ createdAt: 1 });
+visitSchema.index({ expiresAt: 1 });
+visitSchema.index({ approvalToken: 1 }, { unique: true, sparse: true });
 
 export default mongoose.models.Visit || mongoose.model('Visit', visitSchema);

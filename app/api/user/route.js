@@ -1,114 +1,95 @@
 import { NextResponse } from "next/server";
 import { User } from "../db/models/Users";
 import jwt from "jsonwebtoken";
-import dbConnect from '../db/dbconnect'
+import dbConnect from '../db/dbconnect';
+import { jsonSuccess, jsonError } from '../../lib/api/response';
+import { ValidationError, AuthError } from '../../lib/api/errors';
+import { signupSchema, loginSchema } from '../../lib/validators';
+import bcrypt from "bcryptjs";
+import RefreshToken from "../db/models/RefreshToken";
 
+/**
+ * POST /api/user  →  Sign‑up (new account)
+ */
 export async function POST(req) {
+  await dbConnect();
+  const body = await req.json();
   try {
-    await dbConnect();
-
-    const { name, email, password } = await req.json();
-
-    if (!name || !email || !password) {
-      return NextResponse.json(
-        { message: "Name, email, and password are required" },
-        { status: 400 }
-      );
-    }
-
-    if (password.length < 6) {
-      return NextResponse.json(
-        { message: "Password must be at least 6 characters long" },
-        { status: 400 }
-      );
-    }
-
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return NextResponse.json(
-        { message: "User with this email already exists" },
-        { status: 409 }
-      );
-    }
-    const user = await User.create({ name, email, password, role: "sponsor" });
-
-    const userResponse = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt,
-    };
-
-    return NextResponse.json(
-      { message: "User created successfully", user: userResponse },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error("Error creating user:", error);
-    return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    );
+    signupSchema.parse(body);
+  } catch (e) {
+    throw new ValidationError(e.errors?.[0]?.message || 'Invalid input');
   }
+
+  const { name, email, password } = body;
+
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    return new Response(JSON.stringify(jsonError('User with this email already exists', 'USER_EXISTS', 409)), {
+      status: 409,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const user = await User.create({ name, email, password, role: "sponsor" });
+  const payload = { _id: user._id, name: user.name, email: user.email, role: user.role };
+
+  // Access token (short‑lived)
+  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || "24h" });
+  // Refresh token (long‑lived)
+  const refreshToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "30d" });
+  await RefreshToken.create({ userId: user._id, token: refreshToken, expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
+
+  return new Response(JSON.stringify(jsonSuccess({ token, refreshToken, user: payload }, 'User created successfully')), {
+    status: 201,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
+/**
+ * GET /api/user?email=...&password=...  →  Login
+ * (We keep a GET for backward compatibility but it now validates input.)
+ */
 export async function GET(req) {
-  try {
+  await dbConnect();
+  const { searchParams } = new URL(req.url);
+  const email = searchParams.get("email");
+  const password = searchParams.get("password");
 
-    await dbConnect();
-    const { searchParams } = new URL(req.url);
-    const email = searchParams.get("email");
-    const password = searchParams.get("password");
-
-    if (email && password) {
-      const user = await User.findOne({ email });
-
-      if (!user) {
-        return NextResponse.json(
-          { message: "User not found" },
-          { status: 404 }
-        );
-      }
-      const isPasswordValid = await user.comparePassword(password);
-      if (!isPasswordValid) {
-        return NextResponse.json(
-          { message: "Invalid password" },
-          { status: 401 }
-        );
-      }
-      const userPayload = {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role:user.role,
-        createdAt: user.createdAt,
-      };
-      const token = jwt.sign(
-        userPayload,
-        process.env.JWT_SECRET || "your-secret-key",
-        { expiresIn: "24h" }
-      );
-
-      return NextResponse.json(
-        {
-          message: "Login successful",
-          token,
-          user: userPayload,
-        },
-        { status: 200 }
-      );
-    }
-    const users = await User.find().select("-password");
-    return NextResponse.json(
-      { message: "Users fetched successfully", users },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Error in GET request:", error);
-    return NextResponse.json(
-      { message: "Error processing request", error: error.message },
-      { status: 500 }
-    );
+  if (!email || !password) {
+    throw new ValidationError('Email and password are required');
   }
+
+  const loginData = { email, password };
+  try {
+    loginSchema.parse(loginData);
+  } catch (e) {
+    throw new ValidationError(e.errors?.[0]?.message || 'Invalid credentials');
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return new Response(JSON.stringify(jsonError('User not found', 'USER_NOT_FOUND', 404)), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    return new Response(JSON.stringify(jsonError('Invalid password', 'INVALID_PASSWORD', 401)), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const payload = { _id: user._id, name: user.name, email: user.email, role: user.role };
+  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || "24h" });
+  const refreshToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "30d" });
+  await RefreshToken.create({ userId: user._id, token: refreshToken, expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
+
+  return new Response(JSON.stringify(jsonSuccess({ token, refreshToken, user: payload }, 'Login successful')), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
+
